@@ -1,19 +1,37 @@
 import pygame
 import os
 import cevent
+from goal import Goal
+from robot import Robot
 from pygame.locals import *
+import time
+import random
 
 class Game(cevent.CEvent):
     def __init__(self) -> None:
-        self._running = True
-        self._display_surf = None
-        self.size = self.weight, self.height = 640, 400
-    
-    def _init(self):
         pygame.init()
-        self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
+        pygame.font.init()
+        print('Initialized pygame and font')
         self._running = True
-        self.car_img = pygame.transform.scale(pygame.image.load('game/res/car.png'), (120, 164))
+        self.display_surface = None
+        self.size = self.width, self.height = 800, 800
+        self.goal = Goal()
+        self.font = pygame.font.SysFont('Arial', 30)
+        self.robots = [Robot(0.15, 'block.png', random.randint(90, 100), random.randint(90, 100))]
+        self.prevT = time.time()
+        self.currT = time.time()
+        self.startTime = time.time()
+        self.on_init()
+        
+    def refresh_timer(self):
+        self.startTime = time.time()
+    
+    def on_init(self):
+        self.display_surface = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
+        self._running = True
+        pygame.display.set_caption('POWERPLAY GAME')
+        self.refresh_timer()
+        print('Initialized game')
     
     def on_event(self, event):
         if event.type == QUIT:
@@ -61,25 +79,89 @@ class Game(cevent.CEvent):
                 else:
                     self.on_minimize()
             
-    def update(self):
-        pass
+    def observe(self):
+        return int(self.goal.dist_to(self.robots[0].getTrueX(), self.robots[0].getTrueY()))
+    
+    def update(self, dt):
+        self.goal.update(dt)
+        for robot in self.robots:
+            robot.update(dt)
+            
+        if self.reached_goal():
+            self.goal.color = (0, 255, 0)
+        elif self.observe() < self.goal.r * 2:
+            self.goal.color=(0, 255, 255)
+        else:
+            self.goal.color = (255, 0, 0)
+            
+    def reached_goal(self):
+        return self.observe() < 1.1 * self.goal.r
+    
+    def driver_failed(self):
+        x = self.robots[0].x
+        y = self.robots[0].y
+        return x > 800 or x < 0 or y > 800 or y < 0 or (time.time() - self.startTime) > 15
+    
+    def action(self, action):
+        self.currT = time.time()
+        if action == 0:
+            self.robots[0].dx += 10
+        elif action == 1:
+            self.robots[0].dy += 10
+        elif action == 2:
+            self.robots[0].dx -= 10
+        elif action == 3:
+            self.robots[0].dy -= 10
+            
+        self.update(self.currT - self.prevT)
+        
+        self.prevT = self.currT
+        
+    def evaluate(self):
+        reward = 0
+
+        if self.driver_failed():
+            reward = -20000 - self.observe()
+
+        elif self.observe() < self.goal.r * 4:
+            reward = 1000
+
+        elif self.reached_goal():
+            reward = 100000
+            
+        else:
+            reward = (500 - self.observe()) / 20
+            
+        return int(reward)
     
     def render(self):
-        self._display_surf.blit(self.car_img,(0,0))
+        self.display_surface.fill((0, 0, 0))
+        self.goal.render(self.display_surface)
+        text_surface = self.font.render('Distance to goal: ' + str(round(self.goal.dist_to(self.robots[0].getTrueX(), self.robots[0].getTrueY()), 2)), False, self.goal.color)
+        text_surface_2 = self.font.render('Driver Failed: ' + str(self.driver_failed()), False, self.goal.color)
+        for robot in self.robots:
+            robot.render(self.display_surface)
+            
+        self.display_surface.blit(text_surface, (50, 50))
+        self.display_surface.blit(text_surface_2, (50, 150))
         pygame.display.flip()
     
     def on_cleanup(self):
         pygame.quit()
  
     def start(self):
-        if self._init() == False:
-            self._running = False
+        self.on_init()
  
         while( self._running ):
+            self.currT = time.time()
+            
             for event in pygame.event.get():
                 self.on_event(event)
-            self.update()
+                
+            self.update(self.currT - self.prevT) # normalize s to ms
             self.render()
+            
+            self.prevT = self.currT
         
         self.on_cleanup()
  

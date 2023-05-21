@@ -1,5 +1,11 @@
 import pygame
 from pygame.locals import *
+from utils import constants
+
+pygame.K_LEFT = 97
+pygame.K_RIGHT = 100
+pygame.K_UP = 119
+pygame.K_DOWN = 115
  
 class CEvent:
     def __init__(self):
@@ -12,10 +18,28 @@ class CEvent:
         pass
     
     def on_key_down(self, event):
-        pass
+        if event.key == pygame.K_LEFT:
+            self.robots[0].dx = -constants.MAX_ROBOT_SPEED
+        elif event.key == pygame.K_RIGHT:
+            self.robots[0].dx = constants.MAX_ROBOT_SPEED
+        if event.key == pygame.K_UP:
+            self.robots[0].dy = -constants.MAX_ROBOT_SPEED
+        elif event.key == pygame.K_DOWN:
+            self.robots[0].dy = constants.MAX_ROBOT_SPEED
     
     def on_key_up(self, event):
-        pass
+        if event.key == pygame.K_LEFT:
+            if self.robots[0].dx < 0:
+                self.robots[0].dx = 0
+        elif event.key == pygame.K_RIGHT:
+            if self.robots[0].dx > 0:
+                self.robots[0].dx = 0
+        if event.key == pygame.K_UP:
+            if self.robots[0].dy < 0:
+                self.robots[0].dy = 0
+        elif event.key == pygame.K_DOWN:
+            if self.robots[0].dy > 0:
+                self.robots[0].dy = 0
     
     def on_mouse_focus(self):
         pass
@@ -83,5 +107,4 @@ class CEvent:
     def on_event(self, event):
         pass
  
-if __name__ == "__main__" :
-    event = CEvent()
+event = CEvent()

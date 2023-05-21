@@ -1,0 +1,5 @@
+RES_URL = 'game/res/'
+DEFAULT_BB_OFFSET_X_SCALE = 0.25
+DEFAULT_BB_OFFSET_Y_SCALE = 0.5
+MAX_ROBOT_SPEED = 300 # in px/s
+GOAL_RADIUS = 50 # px, obviously
