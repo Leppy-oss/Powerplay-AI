@@ -32,9 +32,14 @@ class Robot:
             
         if (bb_y < -1e8):
             bb_y = self.y - bb_y * 0.5
+            
+        self.bb = pygame.Rect(bb_x, bb_y, bb_w, bb_h)
         
     def grab_cone(self):
         self.cones
+        
+    def collideRect(self, other: pygame.Rect):
+        return self.bb.colliderect(other)
         
     def getTrueX(self):
         return self.x + 0.5 * self.w

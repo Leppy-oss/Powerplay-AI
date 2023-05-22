@@ -9,7 +9,7 @@ import game
 sys.path.insert(0, 'game/src/main')
 
 def simulate():
-    global epsilon, epsilon_decay
+    global epsilon, epsilon_decay, learning_rate, gamma, q_table, MAX_EPISODES, MAX_TRY
     for episode in range(MAX_EPISODES):
 
         # Init environment
@@ -50,6 +50,7 @@ def simulate():
         # exploring rate decay
         if epsilon >= 0.005:
             epsilon *= epsilon_decay
+        print(epsilon)
 
 
 if __name__ == "__main__":
@@ -57,8 +58,8 @@ if __name__ == "__main__":
     MAX_EPISODES = 1000
     MAX_TRY = 10000
     epsilon = 1
-    epsilon_decay = 0.999
-    learning_rate = 0.35
+    epsilon_decay = 0.95
+    learning_rate = 0.2
     gamma = 0.6
     num_box = tuple((env.observation_space.high + np.ones(env.observation_space.shape)).astype(int))
     q_table = np.zeros(num_box + (env.action_space.n,))
