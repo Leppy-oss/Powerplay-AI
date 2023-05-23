@@ -1,8 +1,9 @@
 import pygame
 from utils import constants
 
-class Sprite:
+class Sprite(pygame.sprite.Sprite):
     def __init__(self, surface: pygame.Surface, scale: float=1, w: float=None, h: float=None, x:float=0, y:float=0) -> None:
+        super().__init__()
         wi = None
         he = None
         if w is not None:
@@ -17,6 +18,9 @@ class Sprite:
         self.surface: pygame.Surface = pygame.transform.scale(surface, (wi, he))
         self.x = x
         self.y = y
+        
+    def update(self, dt) -> None:
+        super().update() # bruh
         
     def render(self, display: pygame.Surface) -> None:
         display.blit(self.surface, (self.x, self.y))
