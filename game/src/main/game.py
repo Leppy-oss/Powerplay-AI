@@ -8,6 +8,7 @@ import time
 import random
 from utils import constants
 from game_object import GameObject
+from framework.keyboard import Keyboard
 
 class Game(cevent.CEvent):
     def __init__(self) -> None:
@@ -25,6 +26,7 @@ class Game(cevent.CEvent):
         self.startTime = time.time()
         self.clock = pygame.time.Clock()
         self.test_obj = GameObject(None, None, 'quadrate.png', 100, 100)
+        self.keyboard = Keyboard()
         self.on_init()
         self.robots_group: pygame.sprite.Group(self.test_obj)
         
@@ -89,6 +91,7 @@ class Game(cevent.CEvent):
         return int(self.goal.dist_to(self.robots[0].getTrueX(), self.robots[0].getTrueY()))
     
     def update(self, dt):
+        self.keyboard.update()
         self.goal.update(dt)
         for robot in self.robots:
             robot.update(dt)
@@ -148,6 +151,8 @@ class Game(cevent.CEvent):
         self.test_obj.render(self.display_surface)
         pygame.display.flip()
         self.clock.tick(60) # run the game at 60 fps
+        for key in self.keyboard.just_released_keys:
+            print(key)
     
     def on_cleanup(self):
         pygame.quit()
