@@ -1,7 +1,7 @@
+PRESS: int = 0
+RELEASE: int = 0
+
 class Button:
-    PRESS: int = 0
-    RELEASE: int = 0
-    
     def __init__(self, code: int) -> None:
         self.isPressed = False
         self.previouslyPressed = False
