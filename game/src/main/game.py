@@ -1,5 +1,5 @@
 import pygame
-import os
+import pymunk
 import cevent
 from goal import Goal
 from robot import Robot
@@ -23,6 +23,9 @@ class Game(cevent.CEvent):
         self.robots = [Robot(0.15, 'block.png', random.randint(90, 100), random.randint(90, 100))]
         self.prevT = time.time()
         self.currT = time.time()
+        self.space = pymunk.Space()
+        self.space.gravity = 0, -981
+        self.body = pymunk.Body()
         self.startTime = time.time()
         self.clock = pygame.time.Clock()
         self.test_obj = GameObject(None, None, 'quadrate.png', 100, 100)
@@ -91,6 +94,7 @@ class Game(cevent.CEvent):
         return int(self.goal.dist_to(self.robots[0].getTrueX(), self.robots[0].getTrueY()))
     
     def update(self, dt):
+        self.space.step(dt)
         self.keyboard.update()
         self.goal.update(dt)
         for robot in self.robots:
@@ -99,7 +103,7 @@ class Game(cevent.CEvent):
         if self.reached_goal():
             self.goal.color = (0, 255, 0)
         elif self.observe() < self.goal.r * 2:
-            self.goal.color=(0, 255, 255)
+            self.goal.color = (0, 255, 255)
         else:
             self.goal.color = (255, 0, 0)
             

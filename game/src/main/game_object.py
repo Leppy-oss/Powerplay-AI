@@ -2,7 +2,7 @@ import pygame
 
 from sprite import Sprite
 from utils import constants
-
+import pymunk
 
 class GameObject(Sprite):
     def __init__(self, surface: pygame.Surface, scale: float = 1, opt_url: str = None, w: float = None, h: float = None, bb_l: float = None, bb_t: float = None, bb_h: float = None, bb_w: float = None, x: float = 0, y: float = 0) -> None:
