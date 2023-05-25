@@ -1,1 +1,0 @@
-decided to try using arcade (based on pyglet) and test to see if it's better than pygame
