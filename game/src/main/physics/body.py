@@ -10,29 +10,35 @@ class Body:
     CIRCLE_DEBUG_COLOR = (255, 0, 0)
     LINE_DEBUG_COLOR = (0, 0, 255)
     
-    def __init__(self, w: float, h: float, x: float=0, y: float=0, dx: float=0, dy: float=0, density: float=1, elasticity: float=0.5, _type: int=pymunk.Body.DYNAMIC, _shape: int=RECT_SHAPE, thickness: int = 2) -> None:
+    def __init__(self, w: float, h: float, x: float=0, y: float=0, dx: float=0, dy: float=0, density: float=0.01, friction: float=0.5, elasticity: float=0.5, _type: int=pymunk.Body.DYNAMIC, _shape: int=RECT_SHAPE, thickness: int = 2) -> None:
         self.x = x
         self.y = y
         self.w = w
         self.h = h
         self._shape = _shape
+        self._type = _type
         self.thickness = thickness
         
         self.body: pymunk.Body = pymunk.Body(body_type=_type)
-        self.body.position = x, y
         if _type == pymunk.Body.DYNAMIC:
+            self.body.position = x, y
             self.body.velocity = dx, dy
             
         self.shape: pymunk.Shape
         
         if self._shape == Body.RECT_SHAPE:
-            self.shape = pymunk.Poly(self.body, [(self.x + self.w / 2, self.y - self.h / 2), (self.x - self.w / 2, self.y - self.h / 2), (self.x - self.w / 2, self.y + self.h / 2), (self.x + self.w / 2, self.y + self.h / 2)], radius=0.01)
+            tl = (-self.w / 2, self.h / 2)
+            bl = (-self.w / 2, -self.h / 2)
+            tr = (self.w / 2, self.h / 2)
+            br = (self.w / 2, -self.h / 2)
+            self.shape = pymunk.Poly(self.body, [bl, br, tr, tl], radius=0.1)
         elif self._shape == Body.CIRCLE_SHAPE:
             self.shape = pymunk.Circle(self.body, self.w / 2)
         else:
             self.shape = pymunk.Segment(self.body, (self.x, self.y), (self.x + self.w, self.y + self.h), self.thickness)
             
         self.shape.density = density
+        self.shape.friction = friction
         self.shape.elasticity = elasticity
             
     def attach(self, space: pymunk.Space) -> None:
@@ -55,14 +61,15 @@ class Body:
         self.body.velocity = velocity
         
     def update(self) -> None:
-        x, y = self.body.position
-        self.x = x
-        self.y = y
+        if self._type == pymunk.Body.DYNAMIC:
+            x, y = self.body.position
+            self.x = x
+            self.y = y
         
     def debug_draw(self, surface: pygame.Surface) -> None:
         if self._shape == Body.RECT_SHAPE:
-            pygame.draw.rect(surface, Body.RECT_DEBUG_COLOR, pygame.Rect(self.x - self.w / 2, self.y - self.w / 2, self.w, self.h), width=self.thickness)
+            pygame.draw.rect(surface, Body.RECT_DEBUG_COLOR, pygame.Rect(self.x - self.w / 2, (self.y - self.w / 2), self.w, self.h), width=self.thickness)
         elif self._shape == Body.CIRCLE_SHAPE:
-            pygame.draw.circle(surface, Body.CIRCLE_DEBUG_COLOR, self.body.position, self.shape.radius, width=self.thickness)
+            pygame.draw.circle(surface, Body.CIRCLE_DEBUG_COLOR, (self.x, self.y), self.shape.radius, width=self.thickness)
         else:
-            pygame.draw.line(surface, self.LINE_DEBUG_COLOR, self.body.position, (self.x + self.w, self.y + self.h), self.thickness)
+            pygame.draw.line(surface, self.LINE_DEBUG_COLOR, (self.x, self.y), (self.x + self.w, (self.y + self.h)), self.thickness)

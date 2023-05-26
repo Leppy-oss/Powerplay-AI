@@ -14,7 +14,7 @@ class Goal:
         self.y = y
         self.r = constants.GOAL_RADIUS
         self.color = (0, 255, 0)
-     
+    
     def update(self, dt):
         pass
         
