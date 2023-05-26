@@ -1,6 +1,7 @@
 import pygame
 import pymunk
 from typing import Tuple
+from . import _range
 
 class Body:
     RECT_SHAPE = 0
@@ -9,8 +10,9 @@ class Body:
     RECT_DEBUG_COLOR = (0, 255, 0)
     CIRCLE_DEBUG_COLOR = (255, 0, 0)
     LINE_DEBUG_COLOR = (0, 0, 255)
+    DEFAULT_MAX_SPEED = 500
     
-    def __init__(self, w: float, h: float, x: float=0, y: float=0, dx: float=0, dy: float=0, density: float=0.01, friction: float=0.5, elasticity: float=0.5, _type: int=pymunk.Body.DYNAMIC, _shape: int=RECT_SHAPE, thickness: int = 2) -> None:
+    def __init__(self, w: float, h: float, x: float=0, y: float=0, dx: float=0, dy: float=0, max_dx: float=DEFAULT_MAX_SPEED, max_dy: float=DEFAULT_MAX_SPEED, density: float=0.0000001, friction: float=0.9, elasticity: float=0.0, _type: int=pymunk.Body.DYNAMIC, _shape: int=RECT_SHAPE, thickness: int = 2) -> None:
         self.x = x
         self.y = y
         self.w = w
@@ -18,11 +20,14 @@ class Body:
         self._shape = _shape
         self._type = _type
         self.thickness = thickness
+        self.max_dx = max_dx
+        self.max_dy = max_dy
+        self.friction = friction
         
         self.body: pymunk.Body = pymunk.Body(body_type=_type)
         if _type == pymunk.Body.DYNAMIC:
             self.body.position = x, y
-            self.body.velocity = dx, dy
+            # self.body.velocity = dx, dy
             
         self.shape: pymunk.Shape
         
@@ -38,7 +43,6 @@ class Body:
             self.shape = pymunk.Segment(self.body, (self.x, self.y), (self.x + self.w, self.y + self.h), self.thickness)
             
         self.shape.density = density
-        self.shape.friction = friction
         self.shape.elasticity = elasticity
             
     def attach(self, space: pymunk.Space) -> None:
@@ -46,13 +50,13 @@ class Body:
         
     def set_mass(self, mass: float) -> None:
         self.body.mass = mass
-        self._shape.mass = mass
+        self.shape.mass = mass
         
     def set_density(self, density: float) -> None:
-        self._shape.density = density
+        self.shape.density = density
         
     def set_elasticity(self, elasticity: float) -> None:
-        self._shape.elasticity = elasticity
+        self.shape.elasticity = elasticity
         
     def set_position(self, position: Tuple[float, float]) -> None:
         self.body.position = position
@@ -65,6 +69,21 @@ class Body:
             x, y = self.body.position
             self.x = x
             self.y = y
+            self.update_kinematics()
+            
+    def update_kinematics(self) -> None:
+        if self._type == pymunk.Body.DYNAMIC:
+            dx, dy = self.body.velocity
+            dx = _range.bound(dx, self.max_dx)
+            dy = _range.bound(dy, self.max_dy)
+            
+            fx, fy = self.body.force
+            # no forces on the body, then start slowing down in that direction
+            if abs(fx) < 1:
+                dx *= self.friction
+            if abs(fy) < 1:
+                dy *= self.friction
+            self.set_velocity((dx, dy))
         
     def debug_draw(self, surface: pygame.Surface) -> None:
         if self._shape == Body.RECT_SHAPE:
