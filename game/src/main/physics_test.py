@@ -35,6 +35,8 @@ test_junction.attach(space)
 for wall in walls:
     wall.attach(space)
 
+controller.bind_key_handler(pygame.K_SPACE, lambda : body.set_kinematics((200, 200), (200, 0), (0, 0)))
+
 def on_event(event):
     global _running
     
@@ -55,14 +57,8 @@ def update():
     if controller.was_just_pressed(pygame.K_ESCAPE):
         _running = False
     
-    fx, fy = controller.get_movement(pygame.K_LEFT, pygame.K_RIGHT, pygame.K_DOWN, pygame.K_UP, 100, body)
+    body.set_force(controller.get_movement(100, body))
 
-    if controller.was_just_pressed(pygame.K_SPACE):
-        body.set_position((100, 100))
-        body.set_velocity((0, 0))
-        
-    body.body.force = ((fx, fy))
-        
     body.update()
     test_junction.update()
     test_body.update()

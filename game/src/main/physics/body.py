@@ -65,6 +65,14 @@ class Body:
     def set_velocity(self, velocity: Tuple[float, float]) -> None:
         self.body.velocity = velocity
         
+    def set_force(self, force: Tuple[float, float]) -> None:
+        self.body.force = force
+        
+    def set_kinematics(self, position: Tuple[float, float], velocity: Tuple[float, float], force: Tuple[float, float]):
+        self.set_position(position)
+        self.set_velocity(velocity)
+        self.set_force(force)
+        
     def update(self) -> None:
         if self._type == pymunk.Body.DYNAMIC:
             x, y = self.body.position
