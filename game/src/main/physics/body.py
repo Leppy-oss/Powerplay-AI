@@ -1,7 +1,7 @@
 import pygame
 import pymunk
 from typing import Tuple
-from . import _range
+from utils import _range
 
 class Body:
     RECT_SHAPE = 0
@@ -11,8 +11,9 @@ class Body:
     CIRCLE_DEBUG_COLOR = (255, 0, 0)
     LINE_DEBUG_COLOR = (0, 0, 255)
     DEFAULT_MAX_SPEED = 500
+    DEFAULT_FRICTION = 0.8
     
-    def __init__(self, w: float, h: float, x: float=0, y: float=0, dx: float=0, dy: float=0, max_dx: float=DEFAULT_MAX_SPEED, max_dy: float=DEFAULT_MAX_SPEED, density: float=0.0000001, friction: float=0.9, elasticity: float=0.0, _type: int=pymunk.Body.DYNAMIC, _shape: int=RECT_SHAPE, thickness: int = 2) -> None:
+    def __init__(self, w: float, h: float, x: float=0, y: float=0, dx: float=0, dy: float=0, max_dx: float=DEFAULT_MAX_SPEED, max_dy: float=DEFAULT_MAX_SPEED, density: float=1, friction: float=DEFAULT_FRICTION, elasticity: float=0.5, _type: int=pymunk.Body.DYNAMIC, _shape: int=RECT_SHAPE, thickness: int = 2) -> None:
         self.x = x
         self.y = y
         self.w = w
@@ -36,7 +37,7 @@ class Body:
             bl = (-self.w / 2, -self.h / 2)
             tr = (self.w / 2, self.h / 2)
             br = (self.w / 2, -self.h / 2)
-            self.shape = pymunk.Poly(self.body, [bl, br, tr, tl], radius=0.1)
+            self.shape = pymunk.Poly(self.body, [bl, br, tr, tl], radius=0.01)
         elif self._shape == Body.CIRCLE_SHAPE:
             self.shape = pymunk.Circle(self.body, self.w / 2)
         else:

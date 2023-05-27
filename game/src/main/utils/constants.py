@@ -6,3 +6,4 @@ MAX_ROBOT_SPEED = 300 # in px/s
 GOAL_RADIUS = 50 # px, obviously
 JUNCTION_RADIUS = 10
 DEBUG = True # renders bounding boxes, vectors, etc.
+FORCE_SCALING_FACTOR = 100 # scales forces so they have a sensible magnitude
