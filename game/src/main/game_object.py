@@ -6,7 +6,7 @@ from physics.body import Body
 import pymunk
 
 class GameObject(Sprite):
-    def __init__(self, surface: pygame.Surface=None, scale: float = 1, opt_url: str = None, w: float = None, h: float = None, bb_h: float = None, bb_w: float = None, x: float = 0, y: float = 0, static: bool=False, shape: int=Body.RECT_SHAPE) -> None:
+    def __init__(self, surface: pygame.Surface=None, scale: float = 1, opt_url: str = None, w: float = None, h: float = None, bb_h: float = None, bb_w: float = None, x: float = 0, y: float = 0, static: bool=False, shape: int=Body.RECT_SHAPE, thickness: int = 2) -> None:
         surface_to_use: pygame.Surface = None
         if opt_url is not None:
             surface_to_use = pygame.image.load(constants.RES_URL + opt_url)
@@ -24,7 +24,7 @@ class GameObject(Sprite):
         else:
             self.bb_h = self.surface.get_bounding_rect().height
             
-        self.body: Body = Body(self.bb_w, self.bb_h, x, y, _type=pymunk.Body.STATIC if static else pymunk.Body.DYNAMIC, _shape=shape)
+        self.body: Body = Body(self.bb_w, self.bb_h, x, y, _type=pymunk.Body.STATIC if static else pymunk.Body.DYNAMIC, _shape=shape, thickness=thickness)
         
     def attach(self, space: pymunk.Space):
         self.body.attach(space)

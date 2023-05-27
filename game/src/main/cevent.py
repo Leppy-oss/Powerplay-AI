@@ -13,32 +13,10 @@ class CEvent:
         pass
     
     def on_key_down(self, event):
-        if event.key == pygame.K_LEFT:
-            self.robots[0].dx = -constants.MAX_ROBOT_SPEED
-        elif event.key == pygame.K_RIGHT:
-            self.robots[0].dx = constants.MAX_ROBOT_SPEED
-        if event.key == pygame.K_UP:
-            self.robots[0].dy = -constants.MAX_ROBOT_SPEED
-        elif event.key == pygame.K_DOWN:
-            self.robots[0].dy = constants.MAX_ROBOT_SPEED
-        
-        self.keyboard.on_key_press(event.key)
+        self.controller.on_keydown(event.key)
     
     def on_key_up(self, event):
-        if event.key == pygame.K_LEFT:
-            if self.robots[0].dx < 0:
-                self.robots[0].dx = 0
-        elif event.key == pygame.K_RIGHT:
-            if self.robots[0].dx > 0:
-                self.robots[0].dx = 0
-        if event.key == pygame.K_UP:
-            if self.robots[0].dy < 0:
-                self.robots[0].dy = 0
-        elif event.key == pygame.K_DOWN:
-            if self.robots[0].dy > 0:
-                self.robots[0].dy = 0
-        
-        self.keyboard.on_key_release(event.key)
+        self.controller.on_keyup(event.key)
     
     def on_mouse_focus(self):
         pass
@@ -56,7 +34,7 @@ class CEvent:
         pass
     
     def on_lbutton_down(self, event):
-        print('Mouse down!')
+        pass
     
     def on_rbutton_up(self, event):
         pass

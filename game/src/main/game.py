@@ -1,35 +1,73 @@
 import pygame
 import pymunk
 import cevent
-from goal import Goal
-from robot import Robot
 from pygame.locals import *
 import time
-import random
 from utils import constants
 from game_object import GameObject
-from framework.keyboard import Keyboard
+from framework.controller import Controller
+from physics.body import Body
+from junction import Junction
 
 class Game(cevent.CEvent):
     def __init__(self) -> None:
         pygame.init()
         pygame.font.init()
-        print('Initialized pygame and font')
         self._running = True
         self.display_surface = None
         self.size = self.width, self.height = constants.GAME_DIM, constants.GAME_DIM
-        self.goal = Goal()
-        self.font = pygame.font.SysFont('Arial', 30)
-        self.robots = [Robot(0.15, 'block.png', random.randint(90, 100), random.randint(90, 100))]
+        self.font = pygame.font.SysFont('Arial', 50)
         self.prevT = time.time()
         self.currT = time.time()
         self.space = pymunk.Space()
-        self.space.gravity = 0, -981
-        self.body = pymunk.Body()
         self.startTime = time.time()
         self.clock = pygame.time.Clock()
-        self.test_obj = GameObject(None, None, 'quadrate.png', 100, 100)
-        self.keyboard = Keyboard()
+        self.test_obj = GameObject(None, None, 'quadrate.png', 100, 100, x=200, y=200)
+        wall_offset = 1
+        self.walls = [
+                Body(0, 1000, 0, 0, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS),
+                Body(1000, 0, 0, constants.GAME_DIM - wall_offset, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS),
+                Body(0, 1000, constants.GAME_DIM - wall_offset, 0, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS),
+                Body(1000, 0, 0, 0, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS)
+                ]
+        
+        self.junctions = [
+            Junction('V1', Junction.Types.GROUND),
+            Junction('V2', Junction.Types.LOW),
+            Junction('V3', Junction.Types.GROUND),
+            Junction('V4', Junction.Types.LOW),
+            Junction('V5', Junction.Types.GROUND),
+            Junction('W1', Junction.Types.LOW),
+            Junction('W2', Junction.Types.MID),
+            Junction('W3', Junction.Types.HIGH),
+            Junction('W4', Junction.Types.MID),
+            Junction('W5', Junction.Types.LOW),
+            Junction('X1', Junction.Types.GROUND),
+            Junction('X2', Junction.Types.HIGH),
+            Junction('X3', Junction.Types.GROUND),
+            Junction('X4', Junction.Types.HIGH),
+            Junction('X5', Junction.Types.GROUND),
+            Junction('Y1', Junction.Types.LOW),
+            Junction('Y2', Junction.Types.MID),
+            Junction('Y3', Junction.Types.HIGH),
+            Junction('Y4', Junction.Types.MID),
+            Junction('Y5', Junction.Types.LOW),
+            Junction('Z1', Junction.Types.GROUND),
+            Junction('Z2', Junction.Types.LOW),
+            Junction('Z3', Junction.Types.HIGH),
+            Junction('Z4', Junction.Types.LOW),
+            Junction('Z5', Junction.Types.GROUND),
+        ]
+        
+        for junction in self.junctions:
+            junction.attach(self.space)
+
+        for wall in self.walls:
+            wall.attach(self.space)
+
+        self.test_obj.attach(self.space)
+        self.controller = Controller()
+        self.controller.bind_key_handler(pygame.K_ESCAPE, self.on_exit, mode=Controller.PRESS, name='exit')
         self.on_init()
         self.robots_group: pygame.sprite.Group(self.test_obj)
         
@@ -42,7 +80,6 @@ class Game(cevent.CEvent):
         self._running = True
         pygame.display.set_caption('POWERPLAY GAME')
         self.refresh_timer()
-        print('Initialized game')
     
     def on_event(self, event):
         if event.type == QUIT:
@@ -91,40 +128,37 @@ class Game(cevent.CEvent):
                     self.on_minimize()
             
     def observe(self):
-        return int(self.goal.dist_to(self.robots[0].getTrueX(), self.robots[0].getTrueY()))
+        return 0
     
     def update(self, dt):
         self.space.step(dt)
-        self.keyboard.update()
-        self.goal.update(dt)
-        for robot in self.robots:
-            robot.update(dt)
+        self.controller.update()
+        self.test_obj.body.set_force(self.controller.get_movement(constants.ACC, self.test_obj.body))
+        for wall in self.walls:
+            wall.update()
             
-        if self.reached_goal():
-            self.goal.color = (0, 255, 0)
-        elif self.observe() < self.goal.r * 2:
-            self.goal.color = (0, 255, 255)
-        else:
-            self.goal.color = (255, 0, 0)
+        self.test_obj._update(dt)
+        for junction in self.junctions:
+            junction.update(dt)
             
     def reached_goal(self):
-        return self.observe() < self.goal.r
+        return False
     
     def driver_failed(self):
-        x = self.robots[0].x
-        y = self.robots[0].y
+        x = self.test_obj.body.x
+        y = self.test_obj.body.y
         return x > constants.GAME_DIM or x < 0 or y > constants.GAME_DIM or y < 0 or (time.time() - self.startTime) > 15
     
     def action(self, action):
         self.currT = time.time()
         if action == 0:
-            self.robots[0].dx += 10
+            self.test_obj.body.dx += 10
         elif action == 1:
-            self.robots[0].dy += 10
+            self.test_obj.body.dy += 10
         elif action == 2:
-            self.robots[0].dx -= 10
+            self.test_obj.body.dx -= 10
         elif action == 3:
-            self.robots[0].dy -= 10
+            self.test_obj.body.dy -= 10
             
         self.update(self.currT - self.prevT)
         
@@ -144,26 +178,31 @@ class Game(cevent.CEvent):
     def render(self):
         self.display_surface.fill((0, 0, 0))
         self.display_surface.blit(self.bg, (0, 0))
-        self.goal.render(self.display_surface)
-        text_surface = self.font.render('Distance to goal: ' + str(round(self.goal.dist_to(self.robots[0].getTrueX(), self.robots[0].getTrueY()), 2)), False, self.goal.color)
-        text_surface_2 = self.font.render('Driver Failed: ' + str(self.driver_failed()), False, self.goal.color)
-        for robot in self.robots:
-            robot.render(self.display_surface)
+        '''
+        dist_text = self.font.render('Distance to goal: ' + str(round(self.goal.dist_to(self.test_obj.body.x, self.test_obj.body.y), 2)), False, self.goal.color)
+        fail_text = self.font.render('Driver Failed: ' + str(self.driver_failed()), False, self.goal.color)
+        self.display_surface.blit(dist_text, (600, 50))
+        self.display_surface.blit(fail_text, (600, 100))
+        '''
+        fps_text = self.font.render('FPS: ' + str(round(1 / (self.currT - self.prevT))), False, (255, 255, 255))
+        self.test_obj.render(self.display_surface)
+        for junction in self.junctions:
+            junction.render(self.display_surface)
             
-        self.display_surface.blit(text_surface, (50, 50))
-        self.display_surface.blit(text_surface_2, (50, 150))
+        self.display_surface.blit(fps_text, (50, 50))
+        for wall in self.walls:
+            wall.debug_draw(self.display_surface)
+            
         self.test_obj.render(self.display_surface)
         pygame.display.flip()
         self.clock.tick(60) # run the game at 60 fps
-        for key in self.keyboard.just_released_keys:
-            print(key)
     
     def on_cleanup(self):
         pygame.quit()
- 
+
     def start(self):
         self.on_init()
- 
+
         while( self._running ):
             self.currT = time.time()
             
@@ -176,7 +215,7 @@ class Game(cevent.CEvent):
             self.prevT = self.currT
         
         self.on_cleanup()
- 
+
 if __name__ == "__main__" :
     game = Game()
     game.start()

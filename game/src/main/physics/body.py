@@ -11,7 +11,7 @@ class Body:
     CIRCLE_DEBUG_COLOR = (255, 0, 0)
     LINE_DEBUG_COLOR = (0, 0, 255)
     DEFAULT_MAX_SPEED = 500
-    DEFAULT_FRICTION = 0.8
+    DEFAULT_FRICTION = 0.75
     
     def __init__(self, w: float, h: float, x: float=0, y: float=0, dx: float=0, dy: float=0, max_dx: float=DEFAULT_MAX_SPEED, max_dy: float=DEFAULT_MAX_SPEED, density: float=1, friction: float=DEFAULT_FRICTION, elasticity: float=0.5, _type: int=pymunk.Body.DYNAMIC, _shape: int=RECT_SHAPE, thickness: int = 2) -> None:
         self.x = x
@@ -26,9 +26,9 @@ class Body:
         self.friction = friction
         
         self.body: pymunk.Body = pymunk.Body(body_type=_type)
+        self.body.position = x, y
         if _type == pymunk.Body.DYNAMIC:
-            self.body.position = x, y
-            # self.body.velocity = dx, dy
+            self.body.velocity = dx, dy
             
         self.shape: pymunk.Shape
         
