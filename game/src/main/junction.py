@@ -21,3 +21,10 @@ class Junction(CircleObject):
         
         self.cones = 0
         self.ownership = False
+        
+    def own(self) -> None:
+        self.ownership = True
+        
+    def add_cone(self) -> None:
+        self.cones += 1
+        self.own()

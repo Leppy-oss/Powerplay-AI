@@ -1,19 +1,19 @@
 import pygame
 import pymunk
 from typing import Tuple
-from utils import _range
+from utils import _range, constants
 
 class Body:
     RECT_SHAPE = 0
     CIRCLE_SHAPE = 1
     LINE_SHAPE = 2
-    RECT_DEBUG_COLOR = (0, 255, 0)
-    CIRCLE_DEBUG_COLOR = (255, 0, 0)
-    LINE_DEBUG_COLOR = (0, 0, 255)
+    RECT_DEBUG_COLOR = (33, 237, 135)
+    CIRCLE_DEBUG_COLOR = (237, 176, 33)
+    LINE_DEBUG_COLOR = (227, 33, 237)
     DEFAULT_MAX_SPEED = 500
     DEFAULT_FRICTION = 0.75
     
-    def __init__(self, w: float, h: float, x: float=0, y: float=0, dx: float=0, dy: float=0, max_dx: float=DEFAULT_MAX_SPEED, max_dy: float=DEFAULT_MAX_SPEED, density: float=1, friction: float=DEFAULT_FRICTION, elasticity: float=0.0, _type: int=pymunk.Body.DYNAMIC, _shape: int=RECT_SHAPE, thickness: int = 2) -> None:
+    def __init__(self, w: float, h: float, x: float=0, y: float=0, dx: float=0, dy: float=0, max_dx: float=DEFAULT_MAX_SPEED, max_dy: float=DEFAULT_MAX_SPEED, density: float=1, friction: float=DEFAULT_FRICTION, elasticity: float=0.0, _type: int=pymunk.Body.DYNAMIC, _shape: int=RECT_SHAPE, thickness: int = 2, collision_type=constants.WORLD_COLLIDE_TYPE) -> None:
         self.x = x
         self.y = y
         self.w = w
@@ -46,6 +46,7 @@ class Body:
             
         self.shape.density = density
         self.shape.elasticity = elasticity
+        self.shape.collision_type = collision_type
             
     def attach(self, space: pymunk.Space) -> None:
         space.add(self.body, self.shape)

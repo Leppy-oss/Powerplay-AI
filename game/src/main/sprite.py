@@ -2,30 +2,25 @@ import pygame
 from utils import constants
 
 class Sprite(pygame.sprite.Sprite):
-    def __init__(self, surface: pygame.Surface, scale: float=1, w: float=None, h: float=None, x:float=0, y:float=0) -> None:
+    def __init__(self, image: pygame.Surface, scale: float=1, w: float=None, h: float=None, x:float=0, y:float=0) -> None:
         super().__init__()
         wi = None
         he = None
         if w is not None:
             wi = w
         else:
-            wi = surface.get_width() * scale
+            wi = image.get_width() * scale
         if h is not None:
             he = h
         else:
-            he = surface.get_height() * scale
+            he = image.get_height() * scale
         
-        self.surface: pygame.Surface = pygame.transform.scale(surface, (wi, he))
+        self.image: pygame.Surface = pygame.transform.scale(image, (wi, he))
         self.x = x
         self.y = y
         
     def update(self, dt) -> None:
-        super().update() # bruh
+        super().update(dt) # bruh
         
     def render(self, display: pygame.Surface) -> None:
-        display.blit(self.surface, (self.x, self.y))
-
-class ImageSprite(Sprite):
-    def __init__(self, image_url: str, scale: float=1, w: float=None, h: float=None, x: float = 0, y: float = 0) -> None:
-        img_surface = pygame.image.load(constants.RES_URL + image_url)
-        super().__init__(img_surface, scale, w, h, x, y)
+        display.blit(self.image, (self.x, self.y))

@@ -47,7 +47,6 @@ class Controller(Keyboard):
         handler_set = self.hold_handlers if mode == Controller.HOLD else (self.press_handlers if mode == Controller.PRESS else self.release_handlers)
         if name is None:
             name = '_obj@+' + str(len(handler_set)) + '+' + 'hold' if mode == Controller.HOLD else ('press' if mode == Controller.PRESS else 'release')
-            print(name)
             
         handler_set.add((key, name, handler))
         

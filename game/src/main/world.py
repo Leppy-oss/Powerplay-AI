@@ -9,26 +9,27 @@ from framework.controller import Controller
 from physics.body import Body
 from junction import Junction
 
-class Game(cevent.CEvent):
-    def __init__(self) -> None:
+class World(cevent.CEvent):
+    def __init__(self, width, height, FPS: float=60) -> None:
         pygame.init()
         pygame.font.init()
         self._running = True
         self.display_surface = None
-        self.size = self.width, self.height = constants.GAME_DIM, constants.GAME_DIM
-        self.font = pygame.font.SysFont('Arial', 50)
+        self.size = (width, height)
         self.prevT = time.time()
         self.currT = time.time()
         self.space = pymunk.Space()
         self.startTime = time.time()
         self.clock = pygame.time.Clock()
+        self.FPS = FPS
         self.test_obj = GameObject(None, None, 'quadrate.png', 100, 100, x=200, y=200)
+        self.groups: list[pygame.sprite.Group] = []
         wall_offset = 1
         self.walls = [
-                Body(0, 1000, 0, 0, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS),
-                Body(1000, 0, 0, constants.GAME_DIM - wall_offset, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS),
-                Body(0, 1000, constants.GAME_DIM - wall_offset, 0, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS),
-                Body(1000, 0, 0, 0, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS)
+                Body(0, height, 0, 0, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS),
+                Body(width, 0, 0, height - wall_offset, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS),
+                Body(0, height, width - wall_offset, 0, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS),
+                Body(width, 0, 0, 0, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS)
                 ]
         
         self.junctions = [
