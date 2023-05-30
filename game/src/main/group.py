@@ -1,6 +1,6 @@
 import pygame
 import pymunk
-from utils import constants
+from typing import Callable
 from physics.body import Body
 from game_object import GameObject
 
@@ -11,7 +11,7 @@ class Group(pygame.sprite.Group):
         self.space = space
         self.collision_type = collision_type
         
-    def add_objs(self, *objs: GameObject, space: pymunk.Space=None) -> None:
+    def add_objs(self, *objs: GameObject, space: pymunk.Space = None) -> None:
         assert space is not None or self.space is not None
         super().add(objs)
         for obj in objs:
@@ -20,6 +20,13 @@ class Group(pygame.sprite.Group):
                 obj.attach(space)
             else:
                 obj.attach(self.space)
+                
+    def add_collision_handler(self, other_collision_type: int, collision_handler: Callable, space: pymunk.Space = None) -> None:
+        assert space is not None or self.space is not None
+        if space is not None:
+            space.add_collision_handler(self.collision_type, other_collision_type).begin = collision_handler
+        else:
+            self.space.add_collision_handler(self.collision_type, other_collision_type).begin = collision_handler
                 
     def get_obj(self, uid: int) -> GameObject:
         for obj in self.sprites():
