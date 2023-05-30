@@ -1,6 +1,4 @@
 import pygame
-import pymunk
-from physics import body
 from circle_object import CircleObject
 from utils import constants
 
@@ -20,12 +18,22 @@ class Junction(CircleObject):
         super().__init__(_type, (0, 0, 0), x, y, static=True)
         
         self.coords = coords
-        self.cones = 0
-        self.ownership = False
+        self.red_cones: int = 0
+        self.blue_cones: int = 0
+        self.owner: str = None
         
-    def own(self) -> None:
-        self.ownership = True
+    def own(self, alliance: str) -> None:
+        self.owner = alliance
         
-    def add_cone(self) -> None:
-        self.cones += 1
-        self.own()
+    def render(self, display: pygame.Surface) -> None:
+        super().render(display)
+        if self.owner is not None:
+            pygame.draw.circle(display, constants.RED_COLOR if self.owner == constants.RED_ALLIANCE else constants.BLUE_COLOR, (self.body.x, self.body.y), min(constants.CONE_RADIUS, self.r - self.body.thickness))
+        
+    def add_cone(self, alliance: str) -> None:
+        if alliance == constants.RED_ALLIANCE:
+            self.red_cones += 1
+        else:
+            self.blue_cones += 1
+            
+        self.own(alliance)

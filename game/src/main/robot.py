@@ -11,6 +11,7 @@ class Robot(RectangleObject):
         self.has_cone = False
         self.can_grab = False
         self.can_score = False
+        self.alliance = alliance
         self.grabbable_cones: list[Cone] = []
         self.scorable_junctions: list[Junction] = []
         
@@ -22,8 +23,7 @@ class Robot(RectangleObject):
             if cone.uid == uid:
                 self.grabbable_cones.remove(cone)
                 break
-        
-        
+            
     def add_scorable_junction(self, junction: Junction) -> None:
         self.scorable_junctions.append(junction)
         
@@ -34,10 +34,11 @@ class Robot(RectangleObject):
                 break
         
     def score_cone(self, uid: int) -> None:
-        for junction in self.scorable_junctions:
-            if junction.uid == uid:
-                self.has_cone = False
-                junction.add_cone()
+        if self.can_score:
+            for junction in self.scorable_junctions:
+                if junction.uid == uid:
+                    self.has_cone = False
+                    junction.add_cone(self.alliance)
         
     def grab_cone(self, uid: int) -> None:
         for cone in self.grabbable_cones:
@@ -47,7 +48,7 @@ class Robot(RectangleObject):
                 
     def update(self, dt: float) -> None:
         super().update(dt)
-        self.can_score = len(self.scorable_junctions) > 0
+        self.can_score = len(self.scorable_junctions) > 0 and self.has_cone
         
     def render(self, display: pygame.Surface):
         super().render(display)

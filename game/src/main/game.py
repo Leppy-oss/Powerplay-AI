@@ -13,6 +13,7 @@ from robot import Robot
 class Game(World):
     def __init__(self) -> None:
         super().__init__(constants.GAME_DIM, constants.GAME_DIM, FPS = constants.FPS)
+        self.small_font = pygame.font.SysFont('Arial', int(constants.GAME_DIM / 40))
         self.large_font = pygame.font.SysFont('Arial', int(constants.GAME_DIM / 20))
         self.bg = pygame.transform.scale(pygame.image.load(constants.RES_URL + 'pp_field.png'), (constants.GAME_DIM, constants.GAME_DIM))
         self.player = Robot('RED', x = constants.GAME_DIM / 4, y = 11 * constants.GAME_DIM / 12)
@@ -61,6 +62,18 @@ class Game(World):
         
         self.controller.bind_key_handler(pygame.K_ESCAPE, self.on_exit, mode=Controller.PRESS, name='exit')
         self.controller.bind_key_handler(pygame.K_l, self.select_next_junction, mode=Controller.PRESS)
+        self.controller.bind_key_handler(pygame.K_SPACE, self.try_score, mode=Controller.PRESS)
+        self.player.has_cone = True
+        
+    def try_score(self) -> None:
+        if self.selected_junction_uid is not None:
+            self.player.score_cone(self.selected_junction_uid)
+        
+    def get_junction(self, uid: int) -> Junction:
+        for junction in self.junctions:
+            if junction.uid == uid:
+                return junction
+        return self.junctions[0]
         
     def select_next_junction(self) -> None:
         if self.selected_junction_uid is not None:
@@ -88,13 +101,14 @@ class Game(World):
     def render(self) -> None:
         super().render()
         fps_text = self.large_font.render('FPS: ' + str(round(1 / (self.currT - self.prevT))), False, (255, 255, 255))
-        info_text_1 = self.large_font.render('Can Grab Cone: ' + str(self.player.can_grab), False, (255, 255, 255))
-        info_text_2 = self.large_font.render('Can Score Cone: ' + str(self.player.can_score), False, (255, 255, 255))
-        info_text_3 = self.large_font.render('Selected Junction UID: ' + str(self.selected_junction_uid), False, (255, 255, 255))
+        info_text_1 = self.small_font.render('Can Grab Cone: ' + str(self.player.can_grab), False, (255, 255, 255))
+        info_text_2 = self.small_font.render('Can Score Cone: ' + str(self.player.can_score), False, (255, 255, 255))
+        info_text_3 = self.small_font.render('Selected Junction UID: ' + str(self.selected_junction_uid), False, (255, 255, 255))
         self.display.blit(fps_text, (constants.GAME_DIM / 20, constants.GAME_DIM / 20))
-        self.display.blit(info_text_1, (constants.GAME_DIM / 20, 2 * constants.GAME_DIM / 20))
+        self.display.blit(info_text_1, (constants.GAME_DIM / 20, 2.5 * constants.GAME_DIM / 20))
         self.display.blit(info_text_2, (constants.GAME_DIM / 20, 3 * constants.GAME_DIM / 20))
-        self.display.blit(info_text_3, (constants.GAME_DIM / 20, 4 * constants.GAME_DIM / 20))
+        self.display.blit(info_text_3, (constants.GAME_DIM / 20, 3.5 * constants.GAME_DIM / 20))
+        _j = self.get_junction(self.selected_junction_uid)
         
     def on_init(self) -> None:
         super().on_init()
