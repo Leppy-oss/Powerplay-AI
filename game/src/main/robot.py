@@ -44,6 +44,7 @@ class Robot(RectangleObject):
         for cone in self.grabbable_cones:
             if cone.uid == uid:
                 self.has_cone = True
+                self.grabbable_cones.remove(cone)
                 cone.kill()
                 
     def update(self, dt: float) -> None:
