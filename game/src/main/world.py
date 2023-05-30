@@ -34,23 +34,33 @@ class World(cevent.CEvent):
         self.groups[0].add_bodies(*walls)
         self.controller = Controller()
         
-    def add_group(self, group: Group):
+    def get_groups(self) -> "list[Group]":
+        return self.groups
+        
+    def get_group(self, collision_type: int) -> Group:
+        for group in self.groups:
+            if group.collision_type == collision_type:
+                return group
+            
+        return self.groups[0]
+        
+    def add_group(self, group: Group) -> None:
         self.groups.append(group)
         
-    def remove_group(self, collision_type: int):
+    def remove_group(self, collision_type: int) -> none:
         for group in self.groups:
             if group.collision_type == collision_type:
                 self.groups.remove(group)
                 break
         
-    def refresh_timer(self):
+    def refresh_timer(self) -> None:
         self.startTime = time.time()
     
-    def on_init(self):
+    def on_init(self) -> None:
         self.refresh_timer()
         self._running = True
     
-    def on_event(self, event):
+    def on_event(self, event: pygame.event.Event) -> None:
         if event.type == QUIT:
             self.on_exit()
         elif event.type >= USEREVENT:
@@ -96,27 +106,27 @@ class World(cevent.CEvent):
                 else:
                     self.on_minimize()
     
-    def update(self, dt):
+    def update(self, dt: float) -> None:
         self.space.step(dt)
         self.controller.update()
         for group in self.groups:
             group.update(dt)
             
-    def render(self):
+    def render(self) -> None:
         self.display.fill((0, 0, 0))
         for group in self.groups:
             group.render(self.display)
             
         pygame.display.flip()
         
-    def post_render(self):
+    def post_render(self) -> None:
         self.clock.tick(self.FPS)
     
-    def on_cleanup(self):
+    def on_cleanup(self) -> None:
         print('Exiting')
         pygame.quit()
 
-    def start(self):
+    def start(self) -> None:
         self.on_init()
 
         while( self._running ):

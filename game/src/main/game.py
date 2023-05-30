@@ -1,35 +1,23 @@
 import pygame
 import pymunk
-import cevent
 from pygame.locals import *
 import time
+from group import Group
 from utils import constants
 from game_object import GameObject
 from framework.controller import Controller
-from physics.body import Body
 from junction import Junction
+from world import World
+from robot import Robot
 
-class Game(cevent.CEvent):
+class Game(World):
     def __init__(self) -> None:
-        pygame.init()
-        pygame.font.init()
-        self._running = True
-        self.display_surface = None
-        self.size = self.width, self.height = constants.GAME_DIM, constants.GAME_DIM
+        super().__init__(constants.GAME_DIM, constants.GAME_DIM)
         self.font = pygame.font.SysFont('Arial', 50)
-        self.prevT = time.time()
-        self.currT = time.time()
-        self.space = pymunk.Space()
-        self.startTime = time.time()
-        self.clock = pygame.time.Clock()
         self.test_obj = GameObject(None, None, 'quadrate.png', 100, 100, x=200, y=200)
-        wall_offset = 1
-        self.walls = [
-                Body(0, 1000, 0, 0, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS),
-                Body(1000, 0, 0, constants.GAME_DIM - wall_offset, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS),
-                Body(0, 1000, constants.GAME_DIM - wall_offset, 0, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS),
-                Body(1000, 0, 0, 0, _type=pymunk.Body.STATIC, _shape=Body.LINE_SHAPE, thickness=constants.WALL_THICKNESS)
-                ]
+        self.player = Robot('RED', x = constants.GAME_DIM / 6, y = 5 * constants.GAME_DIM / 6)
+        self.add_group(Group(constants.ROBOT_COLLIDE_TYPE, self.space))
+        self.groups[1].
         
         self.junctions = [
             Junction('V1', Junction.Types.GROUND),
@@ -59,74 +47,16 @@ class Game(cevent.CEvent):
             Junction('Z5', Junction.Types.GROUND),
         ]
         
-        for junction in self.junctions:
-            junction.attach(self.space)
-
-        for wall in self.walls:
-            wall.attach(self.space)
-
         self.test_obj.attach(self.space)
-        self.controller = Controller()
         self.controller.bind_key_handler(pygame.K_ESCAPE, self.on_exit, mode=Controller.PRESS, name='exit')
-        self.on_init()
-        self.robots_group: pygame.sprite.Group(self.test_obj)
         
     def refresh_timer(self):
         self.startTime = time.time()
     
     def on_init(self):
-        self.display_surface = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
-        self.bg = pygame.transform.scale(pygame.image.load(constants.RES_URL + 'pp_field.png'), (constants.GAME_DIM, constants.GAME_DIM))
-        self._running = True
+        super().on_init()
         pygame.display.set_caption('POWERPLAY GAME')
-        self.refresh_timer()
     
-    def on_event(self, event):
-        if event.type == QUIT:
-            self.on_exit()
-        elif event.type >= USEREVENT:
-            self.on_user(event)
-        elif event.type == VIDEOEXPOSE:
-            self.on_expose()
-        elif event.type == VIDEORESIZE:
-            self.on_resize(event)
-        elif event.type == KEYUP:
-            self.on_key_up(event)
-        elif event.type == KEYDOWN:
-            self.on_key_down(event)
-        elif event.type == MOUSEMOTION:
-            self.on_mouse_move(event)
-        elif event.type == MOUSEBUTTONUP:
-            if event.button == 1:
-                self.on_lbutton_up(event)
-            elif event.button == 2:
-                self.on_mbutton_up(event)
-            elif event.button == 3:
-                self.on_rbutton_up(event)
-        elif event.type == MOUSEBUTTONDOWN:
-            if event.button == 1:
-                self.on_lbutton_down(event)
-            elif event.button == 2:
-                self.on_mbutton_down(event)
-            elif event.button == 3:
-                self.on_rbutton_down(event)
-        elif event.type == ACTIVEEVENT:
-            if event.state == 1:
-                if event.gain:
-                    self.on_mouse_focus()
-                else:
-                    self.on_mouse_blur()
-            elif event.state == 2:
-                if event.gain:
-                    self.on_input_focus()
-                else:
-                    self.on_input_blur()
-            elif event.state == 4:
-                if event.gain:
-                    self.on_restore()
-                else:
-                    self.on_minimize()
-            
     def observe(self):
         return 0
     
