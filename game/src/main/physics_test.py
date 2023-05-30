@@ -17,7 +17,7 @@ clock = pygame.time.Clock()
 display = pygame.display.set_mode((1000, 1000), pygame.HWSURFACE | pygame.DOUBLEBUF)
 space = pymunk.Space()
 controller = Controller()
-obj_group = Group(space)
+obj_group = Group(0, space)
 
 wall_thickness = 10
 body = Body(100, 100, 100, 100, _shape=Body.RECT_SHAPE)
@@ -84,7 +84,7 @@ def render():
     pygame.display.flip() 
 
 while _running:
-    display.fill('black')
+    display.fill((0, 0, 0))
     for event in pygame.event.get():
         on_event(event)
         

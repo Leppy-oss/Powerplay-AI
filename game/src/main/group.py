@@ -5,19 +5,20 @@ from physics.body import Body
 from game_object import GameObject
 
 class Group(pygame.sprite.Group):
-    def __init__(self, space: pymunk.Space=None) -> None:
+    def __init__(self, collision_type: int, space: pymunk.Space=None) -> None:
         super().__init__()
         self.bodies: list[Body] = []
         self.space = space
+        self.collision_type = collision_type
         
     def add_objs(self, *objs: GameObject, space: pymunk.Space=None) -> None:
         assert space is not None or self.space is not None
         super().add(objs)
-        if space is not None:
-            for obj in objs:
+        for obj in objs:
+            obj.body.shape.collision_type = self.collision_type
+            if space is not None:
                 obj.attach(space)
-        else:
-            for obj in objs:
+            else:
                 obj.attach(self.space)
                 
     def get_obj(self, uid: int) -> GameObject:
