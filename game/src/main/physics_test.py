@@ -1,11 +1,13 @@
 import pygame
 import pymunk
 from physics.body import Body
+from rectangle_object import RectangleObject
 from game_object import GameObject
 from framework.controller import Controller
 from utils import constants
 from cone import Cone
 from group import Group
+from robot import Robot
 
 _running = False
 
@@ -31,11 +33,12 @@ obj_group.add_bodies(
 )
 
 test_cone = Cone('RED', 100, 500)
-test_obj = GameObject(opt_url='block.png', scale=0.15, x=400, y=100)
-test_obj_bb = GameObject(opt_url='frame.png', scale=0.5, x=400, y=100, collision_type=constants.ROBOT_BB_COLLIDE_TYPE)
+test_obj = Robot('RED', x=400, y=400)
+test_obj_bb = RectangleObject(constants.PX(28), constants.PX(32), (0, 0, 0, 0), collision_type=constants.ROBOT_BB_COLLIDE_TYPE)
+rect_obj = RectangleObject(constants.PX(14), constants.PX(16), (255, 0, 0, 128), 500, 500)
 test_obj_bb.bind_to(test_obj)
 
-obj_group.add_objs(test_obj_bb, test_obj, test_cone)
+obj_group.add_objs(test_obj_bb, test_obj, test_cone, rect_obj)
 
 controller.bind_key_handler(pygame.K_SPACE, lambda : test_obj.body.set_kinematics((500, 500), (200, 0), (0, 0)))
 

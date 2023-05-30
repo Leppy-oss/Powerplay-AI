@@ -98,7 +98,7 @@ class Body:
         
     def debug_draw(self, surface: pygame.Surface) -> None:
         if self._shape == Body.RECT_SHAPE:
-            pygame.draw.rect(surface, Body.RECT_DEBUG_COLOR, pygame.Rect(self.x - self.w / 2, (self.y - self.w / 2), self.w, self.h), width=self.thickness)
+            pygame.draw.rect(surface, Body.RECT_DEBUG_COLOR, pygame.Rect(self.x - self.w / 2, (self.y - self.h / 2), self.w, self.h), width=self.thickness)
         elif self._shape == Body.CIRCLE_SHAPE:
             pygame.draw.circle(surface, Body.CIRCLE_DEBUG_COLOR, (self.x, self.y), self.shape.radius, width=self.thickness)
         else:

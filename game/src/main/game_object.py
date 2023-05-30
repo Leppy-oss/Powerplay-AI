@@ -53,8 +53,8 @@ class GameObject(Sprite):
             self.body.body.velocity = self.binding_obj.body.body.velocity
             self.body.body.force = self.binding_obj.body.body.force
             
-        self.rect.x = x - self.bb_w / 2
-        self.rect.y = y - self.bb_h / 2
+        self.rect.centerx = x
+        self.rect.centery = y
         
     def render(self, display: pygame.Surface) -> None:
         x, y = self.body.x, self.body.y
