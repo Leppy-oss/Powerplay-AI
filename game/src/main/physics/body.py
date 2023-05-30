@@ -2,6 +2,7 @@ import pygame
 import pymunk
 from typing import Tuple
 from utils import _range, constants
+from physics import shape_ex
 
 class Body:
     RECT_SHAPE = 0
@@ -38,18 +39,24 @@ class Body:
             bl = (-self.w / 2, -self.h / 2)
             tr = (self.w / 2, self.h / 2)
             br = (self.w / 2, -self.h / 2)
-            self.shape = pymunk.Poly(self.body, [bl, br, tr, tl], radius=0.01)
+            self.shape = shape_ex.PolyEx(self.body, [bl, br, tr, tl], radius=0.01)
         elif self._shape == Body.CIRCLE_SHAPE:
-            self.shape = pymunk.Circle(self.body, self.w / 2)
+            self.shape = shape_ex.CircleEx(self.body, self.w / 2)
         else:
-            self.shape = pymunk.Segment(self.body, (self.x, self.y), (self.x + self.w, self.y + self.h), self.thickness)
+            self.shape = shape_ex.SegmentEx(self.body, (self.x, self.y), (self.x + self.w, self.y + self.h), self.thickness)
+            
+        self.shape.attach_to_body(self)
             
         self.shape.density = density
         self.shape.elasticity = elasticity
         self.shape.collision_type = collision_type
+        self.super_obj = None
             
     def attach(self, space: pymunk.Space) -> None:
         space.add(self.body, self.shape)
+        
+    def attach_to_obj(self, obj) -> None:
+        self.super_obj = obj
         
     def set_mass(self, mass: float) -> None:
         self.body.mass = mass

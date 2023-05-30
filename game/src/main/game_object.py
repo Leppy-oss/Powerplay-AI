@@ -28,6 +28,7 @@ class GameObject(Sprite):
             self.bb_h = self.image.get_bounding_rect().height
             
         self.body: Body = Body(self.bb_w, self.bb_h, x, y, _type=pymunk.Body.STATIC if static else pymunk.Body.DYNAMIC, _shape=shape, thickness=thickness, collision_type=collision_type)
+        self.body.attach_to_obj(self)
         self.rect: pygame.Rect = self.image.get_rect()
         self.uid = uid
         self.binding = False

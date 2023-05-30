@@ -19,6 +19,7 @@ class Junction(CircleObject):
         
         super().__init__(_type, (0, 0, 0), x, y, static=True)
         
+        self.coords = coords
         self.cones = 0
         self.ownership = False
         

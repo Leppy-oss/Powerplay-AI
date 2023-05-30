@@ -5,11 +5,12 @@ from physics.body import Body
 from game_object import GameObject
 
 class Group(pygame.sprite.Group):
-    def __init__(self, collision_type: int, space: pymunk.Space=None) -> None:
+    def __init__(self, collision_type: int, space: pymunk.Space=None, iter_collide_type: bool = False) -> None:
         super().__init__()
         self.bodies: list[Body] = []
         self.space = space
         self.collision_type = collision_type
+        self.iter_collide_type = iter_collide_type
         
     def add_objs(self, *objs: GameObject, space: pymunk.Space = None) -> None:
         assert space is not None or self.space is not None
@@ -20,13 +21,22 @@ class Group(pygame.sprite.Group):
                 obj.attach(space)
             else:
                 obj.attach(self.space)
+            if self.iter_collide_type:
+                self.collision_type += 1
                 
-    def add_collision_handler(self, other_collision_type: int, collision_handler: Callable, space: pymunk.Space = None) -> None:
+    def add_begin_handler(self, other_collision_type: int, collision_handler: Callable, space: pymunk.Space = None) -> None:
         assert space is not None or self.space is not None
         if space is not None:
             space.add_collision_handler(self.collision_type, other_collision_type).begin = collision_handler
         else:
             self.space.add_collision_handler(self.collision_type, other_collision_type).begin = collision_handler
+            
+    def add_separate_handler(self, other_collision_type: int, collision_handler: Callable, space: pymunk.Space = None) -> None:
+        assert space is not None or self.space is not None
+        if space is not None:
+            space.add_collision_handler(self.collision_type, other_collision_type).separate = collision_handler
+        else:
+            self.space.add_collision_handler(self.collision_type, other_collision_type).separate = collision_handler
                 
     def get_obj(self, uid: int) -> GameObject:
         for obj in self.sprites():

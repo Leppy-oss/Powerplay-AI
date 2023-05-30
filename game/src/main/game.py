@@ -1,4 +1,5 @@
 import pygame
+import pymunk
 from pygame.locals import *
 from group import Group
 from utils import constants
@@ -19,11 +20,12 @@ class Game(World):
         self.add_groups(Group(constants.ROBOT_COLLIDE_TYPE, self.space), Group(constants.JUNCTION_COLLIDE_TYPE, self.space), Group(constants.ROBOT_BB_COLLIDE_TYPE, self.space))
         self.get_group(constants.ROBOT_COLLIDE_TYPE).add_objs(self.player)
         self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_objs(self.player_bb)
-        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_collision_handler(constants.WORLD_COLLIDE_TYPE, lambda _, __, ___: False)
-        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_collision_handler(constants.ROBOT_COLLIDE_TYPE, lambda _, __, ___: False)
-        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_collision_handler(constants.ROBOT_BB_COLLIDE_TYPE, lambda _, __, ___: False)
-        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_collision_handler(constants.CONE_COLLIDE_TYPE, lambda _, __, ___: False)
-        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_collision_handler(constants.JUNCTION_COLLIDE_TYPE, lambda _, __, ___: False)
+        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_begin_handler(constants.WORLD_COLLIDE_TYPE, lambda _, __, ___: False)
+        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_begin_handler(constants.ROBOT_COLLIDE_TYPE, lambda _, __, ___: False)
+        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_begin_handler(constants.ROBOT_BB_COLLIDE_TYPE, lambda _, __, ___: False)
+        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_begin_handler(constants.CONE_COLLIDE_TYPE, lambda _, __, ___: False)
+        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_begin_handler(constants.JUNCTION_COLLIDE_TYPE, self.on_collide_bb_junction)
+        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_separate_handler(constants.JUNCTION_COLLIDE_TYPE, self.on_separate_bb_junction)
         self.player_bb.bind_to(self.player)
         
         self.junctions = [
@@ -53,26 +55,62 @@ class Game(World):
             Junction('Z4', Junction.Types.LOW),
             Junction('Z5', Junction.Types.GROUND),
         ]
+        self.selected_junction_uid: int = None
         
         self.get_group(constants.JUNCTION_COLLIDE_TYPE).add_objs(*self.junctions)
         
         self.controller.bind_key_handler(pygame.K_ESCAPE, self.on_exit, mode=Controller.PRESS, name='exit')
+        self.controller.bind_key_handler(pygame.K_l, self.select_next_junction, mode=Controller.PRESS)
+        
+    def select_next_junction(self) -> None:
+        if self.selected_junction_uid is not None:
+            for index, junction in enumerate(self.player.scorable_junctions):
+                if junction.uid == self.selected_junction_uid:
+                    if index < len(self.player.scorable_junctions) - 1:
+                        self.selected_junction_uid = self.player.scorable_junctions[index + 1].uid
+                        break
+                    else:
+                        self.selected_junction_uid = self.player.scorable_junctions[0].uid
+                        break
+        
+    def on_collide_bb_junction(self, arbiter: pymunk.Arbiter, space: pymunk.Space, data) -> bool:
+        self.player.add_scorable_junction(arbiter.shapes[1].super_body.super_obj)
+        return False
+    
+    def on_separate_bb_junction(self, arbiter: pymunk.Arbiter, space: pymunk.Space, data) -> None:
+        self.player.remove_scorable_junction(arbiter.shapes[1].super_body.super_obj.uid)
+        self.select_first_scorable_junction()
+        
+    def select_first_scorable_junction(self) -> None:
+        if len(self.player.scorable_junctions) > 0:
+            self.selected_junction_uid = self.player.scorable_junctions[0].uid
         
     def render(self) -> None:
         super().render()
         fps_text = self.large_font.render('FPS: ' + str(round(1 / (self.currT - self.prevT))), False, (255, 255, 255))
+        info_text_1 = self.large_font.render('Can Grab Cone: ' + str(self.player.can_grab), False, (255, 255, 255))
+        info_text_2 = self.large_font.render('Can Score Cone: ' + str(self.player.can_score), False, (255, 255, 255))
+        info_text_3 = self.large_font.render('Selected Junction UID: ' + str(self.selected_junction_uid), False, (255, 255, 255))
         self.display.blit(fps_text, (constants.GAME_DIM / 20, constants.GAME_DIM / 20))
+        self.display.blit(info_text_1, (constants.GAME_DIM / 20, 2 * constants.GAME_DIM / 20))
+        self.display.blit(info_text_2, (constants.GAME_DIM / 20, 3 * constants.GAME_DIM / 20))
+        self.display.blit(info_text_3, (constants.GAME_DIM / 20, 4 * constants.GAME_DIM / 20))
         
-    def on_init(self):
+    def on_init(self) -> None:
         super().on_init()
         pygame.display.set_caption('Powerplay AI Training Game')
     
-    def observe(self):
+    def observe(self) -> int:
         return 0
     
     def update(self, dt: float) -> None:
         super().update(dt)
         self.player.body.set_force(self.controller.get_movement(constants.ACC, self.player.body))
+        if len(self.player.scorable_junctions) < 1:
+            self.selected_junction_uid = None
+        else:
+            if self.selected_junction_uid is None:
+                self.select_first_scorable_junction()
             
     def reached_goal(self):
         return False

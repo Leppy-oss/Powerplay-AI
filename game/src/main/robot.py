@@ -1,6 +1,8 @@
 import pygame
 from utils import constants
 from rectangle_object import RectangleObject
+from junction import Junction
+from cone import Cone
 
 class Robot(RectangleObject):
     def __init__(self, alliance: str, w: float = constants.PX(constants.DEFAULT_ROBOT_WIDTH), h: float = constants.PX(constants.DEFAULT_ROBOT_HEIGHT),  x: float = 0, y: float = 0) -> None:
@@ -9,9 +11,43 @@ class Robot(RectangleObject):
         self.has_cone = False
         self.can_grab = False
         self.can_score = False
+        self.grabbable_cones: list[Cone] = []
+        self.scorable_junctions: list[Junction] = []
         
+    def add_grabbable_cone(self, cone: Cone) -> None:
+        self.grabbable_cones.append(cone)
+        
+    def remove_grabbable_cone(self, uid: int) -> None:
+        for cone in self.grabbable_cones:
+            if cone.uid == uid:
+                self.grabbable_cones.remove(cone)
+                break
+        
+        
+    def add_scorable_junction(self, junction: Junction) -> None:
+        self.scorable_junctions.append(junction)
+        
+    def remove_scorable_junction(self, uid: int) -> None:
+        for junction in self.scorable_junctions:
+            if junction.uid == uid:
+                self.scorable_junctions.remove(junction)
+                break
+        
+    def score_cone(self, uid: int) -> None:
+        for junction in self.scorable_junctions:
+            if junction.uid == uid:
+                self.has_cone = False
+                junction.add_cone()
+        
+    def grab_cone(self, uid: int) -> None:
+        for cone in self.grabbable_cones:
+            if cone.uid == uid:
+                self.has_cone = True
+                cone.kill()
+                
     def update(self, dt: float) -> None:
         super().update(dt)
+        self.can_score = len(self.scorable_junctions) > 0
         
     def render(self, display: pygame.Surface):
         super().render(display)
