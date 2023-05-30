@@ -12,7 +12,6 @@ class Robot(RectangleObject):
         
     def render(self, display: pygame.Surface):
         super().render(display)
-        print(self.body.y - self.h / 2)
         width = constants.PX(constants.NORM_ROBOT(constants.DEFAULT_WHEEL_WIDTH, constants.INCHES(self.w)))
         height = constants.PX(constants.NORM_ROBOT(constants.DEFAULT_WHEEL_HEIGHT, constants.INCHES(self.w)))
         pygame.draw.rect(display, constants.GRAY_COLOR, pygame.Rect(self.rect.left, self.rect.top, width, height))

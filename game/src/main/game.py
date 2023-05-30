@@ -12,12 +12,14 @@ from robot import Robot
 
 class Game(World):
     def __init__(self) -> None:
-        super().__init__(constants.GAME_DIM, constants.GAME_DIM)
-        self.font = pygame.font.SysFont('Arial', 50)
+        super().__init__(constants.GAME_DIM, constants.GAME_DIM, FPS = constants.FPS)
+        self.large_font = pygame.font.SysFont('Arial', int(constants.GAME_DIM / 20))
+        self.bg = pygame.transform.scale(pygame.image.load(constants.RES_URL + 'pp_field.png'), (constants.GAME_DIM, constants.GAME_DIM))
         self.test_obj = GameObject(None, None, 'quadrate.png', 100, 100, x=200, y=200)
         self.player = Robot('RED', x = constants.GAME_DIM / 6, y = 5 * constants.GAME_DIM / 6)
-        self.add_group(Group(constants.ROBOT_COLLIDE_TYPE, self.space))
-        self.groups[1].
+        self.add_groups(Group(constants.ROBOT_COLLIDE_TYPE, self.space), Group(constants.JUNCTION_COLLIDE_TYPE, self.space), Group(100, self.space))
+        self.get_group(constants.ROBOT_COLLIDE_TYPE).add_objs(self.player)
+        self.get_group(100).add_objs(self.test_obj)
         
         self.junctions = [
             Junction('V1', Junction.Types.GROUND),
@@ -47,29 +49,25 @@ class Game(World):
             Junction('Z5', Junction.Types.GROUND),
         ]
         
-        self.test_obj.attach(self.space)
+        self.get_group(constants.JUNCTION_COLLIDE_TYPE).add_objs(*self.junctions)
+        
         self.controller.bind_key_handler(pygame.K_ESCAPE, self.on_exit, mode=Controller.PRESS, name='exit')
         
-    def refresh_timer(self):
-        self.startTime = time.time()
-    
+    def render(self) -> None:
+        super().render()
+        fps_text = self.large_font.render('FPS: ' + str(round(1 / (self.currT - self.prevT))), False, (255, 255, 255))
+        self.display.blit(fps_text, (constants.GAME_DIM / 20, constants.GAME_DIM / 20))
+        
     def on_init(self):
         super().on_init()
-        pygame.display.set_caption('POWERPLAY GAME')
+        pygame.display.set_caption('Powerplay AI Training Game')
     
     def observe(self):
         return 0
     
-    def update(self, dt):
-        self.space.step(dt)
-        self.controller.update()
-        self.test_obj.body.set_force(self.controller.get_movement(constants.ACC, self.test_obj.body))
-        for wall in self.walls:
-            wall.update()
-            
-        self.test_obj.update(dt)
-        for junction in self.junctions:
-            junction.update(dt)
+    def update(self, dt: float) -> None:
+        super().update(dt)
+        self.player.body.set_force(self.controller.get_movement(constants.ACC, self.player.body))
             
     def reached_goal(self):
         return False
@@ -105,47 +103,6 @@ class Game(World):
             
         return int(reward)
     
-    def render(self):
-        self.display_surface.fill((0, 0, 0))
-        self.display_surface.blit(self.bg, (0, 0))
-        '''
-        dist_text = self.font.render('Distance to goal: ' + str(round(self.goal.dist_to(self.test_obj.body.x, self.test_obj.body.y), 2)), False, self.goal.color)
-        fail_text = self.font.render('Driver Failed: ' + str(self.driver_failed()), False, self.goal.color)
-        self.display_surface.blit(dist_text, (600, 50))
-        self.display_surface.blit(fail_text, (600, 100))
-        '''
-        fps_text = self.font.render('FPS: ' + str(round(1 / (self.currT - self.prevT))), False, (255, 255, 255))
-        self.test_obj.render(self.display_surface)
-        for junction in self.junctions:
-            junction.render(self.display_surface)
-            
-        self.display_surface.blit(fps_text, (50, 50))
-        for wall in self.walls:
-            wall.debug_draw(self.display_surface)
-            
-        self.test_obj.render(self.display_surface)
-        pygame.display.flip()
-        self.clock.tick(60) # run the game at 60 fps
-    
-    def on_cleanup(self):
-        pygame.quit()
-
-    def start(self):
-        self.on_init()
-
-        while( self._running ):
-            self.currT = time.time()
-            
-            for event in pygame.event.get():
-                self.on_event(event)
-                
-            self.update(self.currT - self.prevT) # normalize s to ms
-            self.render()
-            
-            self.prevT = self.currT
-        
-        self.on_cleanup()
-
 if __name__ == "__main__" :
     game = Game()
     game.start()

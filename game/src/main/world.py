@@ -15,6 +15,8 @@ class World(cevent.CEvent):
         self._running = True
         self.size = (width, height)
         self.display = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
+        self.bg = pygame.Surface((0, 0))
+        self.bg.set_alpha(0)
         self.prevT = time.time()
         self.currT = time.time()
         self.space = pymunk.Space()
@@ -44,10 +46,11 @@ class World(cevent.CEvent):
             
         return self.groups[0]
         
-    def add_group(self, group: Group) -> None:
-        self.groups.append(group)
+    def add_groups(self, *groups: Group) -> None:
+        for group in groups:
+            self.groups.append(group)
         
-    def remove_group(self, collision_type: int) -> none:
+    def remove_group(self, collision_type: int) -> None:
         for group in self.groups:
             if group.collision_type == collision_type:
                 self.groups.remove(group)
@@ -114,12 +117,12 @@ class World(cevent.CEvent):
             
     def render(self) -> None:
         self.display.fill((0, 0, 0))
+        self.display.blit(self.bg, (0, 0))
         for group in self.groups:
             group.render(self.display)
-            
-        pygame.display.flip()
         
     def post_render(self) -> None:
+        pygame.display.flip()
         self.clock.tick(self.FPS)
     
     def on_cleanup(self) -> None:
@@ -137,7 +140,7 @@ class World(cevent.CEvent):
                 
             self.update(self.currT - self.prevT) # normalize s to ms
             self.render()
-            self.post_render
+            self.post_render()
             
             self.prevT = self.currT
         

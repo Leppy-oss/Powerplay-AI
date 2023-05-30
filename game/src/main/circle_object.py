@@ -11,6 +11,6 @@ class CircleObject(GameObject):
         self.color = color
         
     def render(self, display: pygame.Surface):
-        pygame.draw.circle(display, self.color, (self.body.x, self.body.y), self.r - self.body.thickness)
+        pygame.draw.circle(display, self.color, (self.body.x, self.body.y), self.r)
         if constants.DEBUG:
             self.body.debug_draw(display)
