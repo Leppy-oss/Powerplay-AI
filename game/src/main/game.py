@@ -1,11 +1,10 @@
 import pygame
-import pymunk
 from pygame.locals import *
-import time
 from group import Group
 from utils import constants
-from game_object import GameObject
+import time
 from framework.controller import Controller
+from rectangle_object import RectangleObject
 from junction import Junction
 from world import World
 from robot import Robot
@@ -15,11 +14,17 @@ class Game(World):
         super().__init__(constants.GAME_DIM, constants.GAME_DIM, FPS = constants.FPS)
         self.large_font = pygame.font.SysFont('Arial', int(constants.GAME_DIM / 20))
         self.bg = pygame.transform.scale(pygame.image.load(constants.RES_URL + 'pp_field.png'), (constants.GAME_DIM, constants.GAME_DIM))
-        self.test_obj = GameObject(None, None, 'quadrate.png', 100, 100, x=200, y=200)
-        self.player = Robot('RED', x = constants.GAME_DIM / 6, y = 5 * constants.GAME_DIM / 6)
-        self.add_groups(Group(constants.ROBOT_COLLIDE_TYPE, self.space), Group(constants.JUNCTION_COLLIDE_TYPE, self.space), Group(100, self.space))
+        self.player = Robot('RED', x = constants.GAME_DIM / 4, y = 11 * constants.GAME_DIM / 12)
+        self.player_bb = RectangleObject(self.player.w * constants.ROBOT_BB_SCALING_FACTOR, self.player.h * constants.ROBOT_BB_SCALING_FACTOR, (0, 0, 0, 0), x = self.player.x, y = self.player.y)
+        self.add_groups(Group(constants.ROBOT_COLLIDE_TYPE, self.space), Group(constants.JUNCTION_COLLIDE_TYPE, self.space), Group(constants.ROBOT_BB_COLLIDE_TYPE, self.space))
         self.get_group(constants.ROBOT_COLLIDE_TYPE).add_objs(self.player)
-        self.get_group(100).add_objs(self.test_obj)
+        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_objs(self.player_bb)
+        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_collision_handler(constants.WORLD_COLLIDE_TYPE, lambda _, __, ___: False)
+        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_collision_handler(constants.ROBOT_COLLIDE_TYPE, lambda _, __, ___: False)
+        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_collision_handler(constants.ROBOT_BB_COLLIDE_TYPE, lambda _, __, ___: False)
+        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_collision_handler(constants.CONE_COLLIDE_TYPE, lambda _, __, ___: False)
+        self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_collision_handler(constants.JUNCTION_COLLIDE_TYPE, lambda _, __, ___: False)
+        self.player_bb.bind_to(self.player)
         
         self.junctions = [
             Junction('V1', Junction.Types.GROUND),

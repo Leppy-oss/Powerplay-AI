@@ -29,6 +29,7 @@ DEFAULT_ROBOT_HEIGHT = 14
 # rounded figures for gobilda 96mm
 DEFAULT_WHEEL_WIDTH = 3
 DEFAULT_WHEEL_HEIGHT = 5
+ROBOT_BB_SCALING_FACTOR = 3
 
 def PX(inches: float) -> float:
     return PX_PER_INCH * inches
