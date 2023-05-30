@@ -10,6 +10,7 @@ from rectangle_object import RectangleObject
 from junction import Junction
 from world import World
 from robot import Robot
+from framework.action_queue import ActionQueue
 
 class Game(World):
     def __init__(self) -> None:
@@ -17,9 +18,9 @@ class Game(World):
         self.small_font = pygame.font.SysFont('Arial', int(constants.GAME_DIM / 40))
         self.large_font = pygame.font.SysFont('Arial', int(constants.GAME_DIM / 20))
         self.bg = pygame.transform.scale(pygame.image.load(constants.RES_URL + 'pp_field.png'), (constants.GAME_DIM, constants.GAME_DIM))
-        self.player = Robot('RED', x = constants.GAME_DIM / 4, y = 11 * constants.GAME_DIM / 12)
+        self.player = Robot('BLUE', x = constants.GAME_DIM / 4, y = 11 * constants.GAME_DIM / 12)
         self.player_bb = RectangleObject(self.player.w * constants.ROBOT_BB_SCALING_FACTOR, self.player.h * constants.ROBOT_BB_SCALING_FACTOR, (0, 0, 0, 0), x = self.player.x, y = self.player.y)
-        self.add_groups(Group(constants.ROBOT_COLLIDE_TYPE, self.space), Group(constants.JUNCTION_COLLIDE_TYPE, self.space), Group(constants.ROBOT_BB_COLLIDE_TYPE, self.space), Group(constants.CONE_COLLIDE_TYPE, self.space))
+        self.add_groups(Group(constants.JUNCTION_COLLIDE_TYPE, self.space), Group(constants.CONE_COLLIDE_TYPE, self.space), Group(constants.ROBOT_BB_COLLIDE_TYPE, self.space), Group(constants.ROBOT_COLLIDE_TYPE, self.space))
         self.get_group(constants.ROBOT_COLLIDE_TYPE).add_objs(self.player)
         self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_objs(self.player_bb)
         self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_begin_handler(constants.WORLD_COLLIDE_TYPE, lambda _, __, ___: False)
@@ -30,6 +31,7 @@ class Game(World):
         self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_begin_handler(constants.JUNCTION_COLLIDE_TYPE, self.on_collide_bb_junction)
         self.get_group(constants.ROBOT_BB_COLLIDE_TYPE).add_separate_handler(constants.JUNCTION_COLLIDE_TYPE, self.on_separate_bb_junction)
         self.player_bb.bind_to(self.player)
+        self.player.body.shape.filter = pymunk.ShapeFilter(1)
         
         self.junctions = [
             Junction('V1', Junction.Types.GROUND),
@@ -54,32 +56,40 @@ class Game(World):
             Junction('Y5', Junction.Types.LOW),
             Junction('Z1', Junction.Types.GROUND),
             Junction('Z2', Junction.Types.LOW),
-            Junction('Z3', Junction.Types.HIGH),
+            Junction('Z3', Junction.Types.GROUND),
             Junction('Z4', Junction.Types.LOW),
             Junction('Z5', Junction.Types.GROUND),
         ]
         self.selected_junction_uid: int = None
         self.selected_cone_uid: int = None
+        self.prop_cone_uid: int = None
         
         self.get_group(constants.JUNCTION_COLLIDE_TYPE).add_objs(*self.junctions)
         
         self.controller.bind_key_handler(pygame.K_ESCAPE, self.on_exit, mode=Controller.PRESS, name='exit')
-        self.controller.bind_key_handler(pygame.K_l, self.select_next_junction, mode=Controller.PRESS)
+        self.controller.bind_key_handler(pygame.K_r, self.select_next_junction, mode=Controller.PRESS)
+        self.controller.bind_key_handler(pygame.K_t, self.select_next_cone, mode=Controller.PRESS)
         self.controller.bind_key_handler(pygame.K_SPACE, self.try_score, mode=Controller.PRESS)
         self.controller.bind_key_handler(pygame.K_y, self.try_grab, mode=Controller.PRESS)
+        self.queue = ActionQueue()
         self.spawn_cone(self.player.alliance)
         
     def try_grab(self):
-        if self.selected_cone_uid is not None:
+        if self.selected_cone_uid is not None and self.player.can_grab:
             self.player.grab_cone(self.selected_cone_uid)
-            self.spawn_cone(self.player.alliance)
+            self.queue.add_delayed_action(lambda: self.spawn_cone(self.player.alliance), 1000)
         
     def spawn_cone(self, alliance: str) -> None:
         self.get_group(constants.CONE_COLLIDE_TYPE).add_objs(Cone(alliance, x = constants.SPAWN_CONE_X_RED if alliance == constants.RED_ALLIANCE else constants.SPAWN_CONE_X_BLUE, y = constants.SPAWN_CONE_Y))
         
     def try_score(self) -> None:
         if self.selected_junction_uid is not None:
-            self.player.score_cone(self.selected_junction_uid)
+            self.player.start_score_cone(self.selected_junction_uid)
+            newCone = Cone(self.player.alliance, self.player.body.x, self.player.body.y)
+            self.get_group(constants.CONE_COLLIDE_TYPE).add_objs(newCone)
+            newCone.body.shape.collision_type = constants.ROBOT_BB_COLLIDE_TYPE
+            self.prop_cone_uid = newCone.uid
+            self.queue.add_delayed_action(lambda: newCone.kill(), 1100)
         
     def get_junction(self, uid: int) -> Junction:
         for junction in self.junctions:
@@ -140,20 +150,53 @@ class Game(World):
         else:
             self.selected_junction_uid = None
         
+    def lerp(self, a: float, b: float, t: float) -> float:
+        return (1 - t) * a + t * b
+    
+    def inv_lerp(self, a: float, b: float, v: float) -> float:
+        return (v - a) / (b - a)
+    
     def update(self, dt: float) -> None:
         super().update(dt)
-        self.player.body.set_force(self.controller.get_movement(constants.ACC, self.player.body))
+        self.queue.update()
+        if self.player.can_move:
+            self.player.body.set_force(self.controller.get_movement(constants.ACC, self.player.body))
+            
         if len(self.player.scorable_junctions) < 1:
             self.selected_junction_uid = None
         else:
             if self.selected_junction_uid is None:
                 self.select_first_scorable_junction()
+            
+            if self.player.scoring_cone:
+                x1, y1 = self.get_junction(self.selected_junction_uid).body.body.position
+                x2, y2 = self.get_cone(self.prop_cone_uid).body.body.position
+                x = self.lerp(x2, x1, abs(x2 - x1) / 200)
+                y = self.lerp(y2, y1, abs(y2 - y1) / 200)
+                self.get_cone(self.prop_cone_uid).body.shape.filter = pymunk.ShapeFilter(1)
+                self.get_cone(self.prop_cone_uid).body.set_position((x, y))
+                
         if len(self.player.grabbable_cones) < 1:
             self.selected_cone_uid = None
         else:
             if self.selected_cone_uid is None:
                 self.select_first_grabbable_cone()
-        
+            if self.player.grabbing_cone:
+                    x1, y1 = self.player.body.body.position
+                    x2, y2 = self.get_cone(self.selected_cone_uid).body.body.position
+                    x = self.lerp(x2, x1, abs(x2 - x1) / 1000)
+                    y = self.lerp(y2, y1, abs(y2 - y1) / 1000)
+                    self.get_cone(self.selected_cone_uid).body.shape.filter = pymunk.ShapeFilter(1)
+                    self.get_cone(self.selected_cone_uid).body.set_position((x, y))
+                    
+    def inserted_render(self):
+        if self.selected_junction_uid is not None and self.player.can_score:
+            _junction = self.get_junction(self.selected_junction_uid)
+            pygame.draw.circle(self.display, constants.SELECTED_COLOR, (_junction.body.x, _junction.body.y), _junction.r + _junction.body.thickness * 2, _junction.body.thickness * 2)
+        if self.selected_cone_uid is not None and self.player.can_grab:
+            _cone = self.get_cone(self.selected_cone_uid)
+            pygame.draw.circle(self.display, constants.SELECTED_COLOR, (_cone.body.x, _cone.body.y), _cone.r + _cone.body.thickness * 2, _cone.body.thickness * 2) 
+                
     def render(self) -> None:
         super().render()
         fps_text = self.large_font.render('FPS: ' + str(round(1 / (self.currT - self.prevT))), False, (255, 255, 255))
@@ -166,12 +209,6 @@ class Game(World):
         self.display.blit(info_text_2, (constants.GAME_DIM / 20, 3 * constants.GAME_DIM / 20))
         self.display.blit(info_text_3, (constants.GAME_DIM / 20, 3.5 * constants.GAME_DIM / 20))
         self.display.blit(info_text_4, (constants.GAME_DIM / 20, 4 * constants.GAME_DIM / 20))
-        if self.selected_junction_uid is not None:
-            _junction = self.get_junction(self.selected_junction_uid)
-            pygame.draw.circle(self.display, constants.SELECTED_COLOR, (_junction.body.x, _junction.body.y), _junction.r + _junction.body.thickness * 2, _junction.body.thickness * 2)
-        if self.selected_cone_uid is not None:
-            _cone = self.get_cone(self.selected_cone_uid)
-            pygame.draw.circle(self.display, constants.SELECTED_COLOR, (_cone.body.x, _cone.body.y), _cone.r + _cone.body.thickness * 2, _cone.body.thickness * 2)
         
     def on_init(self) -> None:
         super().on_init()

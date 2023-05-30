@@ -114,10 +114,14 @@ class World(cevent.CEvent):
         self.controller.update()
         for group in self.groups:
             group.update(dt)
+    
+    def inserted_render(self) -> None:
+        pass
             
     def render(self) -> None:
         self.display.fill((0, 0, 0))
         self.display.blit(self.bg, (0, 0))
+        self.inserted_render()
         for group in self.groups:
             group.render(self.display)
         

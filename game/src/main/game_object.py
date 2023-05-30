@@ -1,9 +1,10 @@
 import pygame
-
+import pymunk
 from sprite import Sprite
 from utils import constants
 from physics.body import Body
-import pymunk
+from framework.action_queue import ActionQueue
+from typing import Callable
 
 uid = 0
 
@@ -33,10 +34,17 @@ class GameObject(Sprite):
         self.uid = uid
         self.binding = False
         self.binding_obj = None
+        self.queue = ActionQueue()
+        self.space: pymunk.Space = None
         uid += 1
+        
+    def kill(self) -> None:
+        super().kill()
+        self.space.remove(self.body.body, self.body.shape)
         
     def attach(self, space: pymunk.Space) -> None:
         self.body.attach(space)
+        self.space = space
         
     def bind_to(self, other) -> None:
         self.binding = True
@@ -45,8 +53,12 @@ class GameObject(Sprite):
     def stop_binding(self) -> None:
         self.binding = False
         self.binding_obj = None
+        
+    def add_delayed_action(self, action: Callable, delay_ms: float):
+        self.queue.add_delayed_action(action, delay_ms)
 
     def update(self, dt: float) -> None:
+        self.queue.update()
         self.body.update()
         x, y = self.body.x, self.body.y
         if self.binding: # copy the bound object's kinematics
